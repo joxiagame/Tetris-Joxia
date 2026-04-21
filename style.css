@@ -23,7 +23,11 @@ body {
     justify-content: center;
     align-items: center;
     min-height: 100vh;
+    overflow: hidden; /* Empêche le défilement de la page sur mobile */
 }
+
+/* Optimisation tactile globale */
+* { touch-action: manipulation; user-select: none; -webkit-user-select: none; }
 
 .game-wrapper {
     display: flex;
@@ -56,7 +60,7 @@ body {
     border-color: var(--neon-blue);
 }
 
-.top-menu { display: flex; gap: 5px; justify-content: center; }
+.top-menu { display: flex; gap: 5px; justify-content: center; flex-wrap: wrap; }
 .btn-gold { border-color: gold; color: gold; }
 
 /* Conteneur du jeu */
@@ -70,10 +74,50 @@ body {
     box-shadow: var(--glow);
 }
 
-canvas { border: 2px solid #222; background: #000; }
-.side-panel { width: 80px; text-align: center; }
+canvas { border: 2px solid #222; background: #000; max-width: 100%; height: auto; }
+.side-panel { width: 100px; display: flex; flex-direction: column; align-items: center; gap: 15px; }
+.panel-section { text-align: center; }
 .label { color: var(--accent-color); font-size: 0.7em; font-weight: bold; }
 #score { font-size: 1.8em; text-shadow: var(--glow); }
+
+/* Nouveaux contrôles tactiles */
+.mobile-controls {
+    margin-top: auto; /* Pousse les contrôles vers le bas */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+}
+
+.touch-row {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    width: 100%;
+}
+
+.touch-btn {
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid var(--border-color);
+    color: white;
+    border-radius: 8px;
+    font-size: 1.2em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.touch-btn:active {
+    background: var(--accent-color);
+    border-color: var(--accent-color);
+    transform: scale(0.9);
+}
+
+#btn-up { width: 50px; height: 45px; border-color: gold; color: gold; }
 
 /* Overlays */
 .overlay {
@@ -87,3 +131,10 @@ canvas { border: 2px solid #222; background: #000; }
 }
 .hidden { display: none !important; }
 .score-row { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #222; color: #39ff14; }
+
+/* Adaptation pour très petits écrans */
+@media (max-width: 360px) {
+    .game-container { gap: 8px; padding: 10px; }
+    .side-panel { width: 80px; }
+    .touch-btn { width: 35px; height: 35px; }
+}
