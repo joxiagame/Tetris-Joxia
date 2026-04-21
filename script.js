@@ -1,19 +1,15 @@
 // --- CONFIGURATION FIREBASE ---
 const firebaseConfig = {
-    // IMPORTANT : L'URL doit être exactement celle-ci pour pointer sur l'Europe
     databaseURL: "https://joxiahub-2928b-default-rtdb.europe-west1.firebasedatabase.app/"
 };
 
-// Initialisation avec vérification
+// Initialisation forcée
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
-} else {
-    firebase.app(); // Utilise l'app déjà initialisée
 }
-
 const database = firebase.database();
 
-// --- VARIABLES DE JEU ---
+// --- SETUP JEU ---
 const canvas = document.getElementById('tetris');
 const context = canvas.getContext('2d');
 const nextCanvas = document.getElementById('next');
@@ -21,7 +17,6 @@ const nextContext = nextCanvas.getContext('2d');
 context.scale(20, 20);
 nextContext.scale(20, 20);
 
-// On récupère le joueur dans l'URL (ex: ?player=Witnesse)
 let currentPlayer = new URLSearchParams(window.location.search).get('player') || "Invité";
 document.getElementById('player-display').innerText = currentPlayer;
 
@@ -39,10 +34,19 @@ let lastTime = 0;
 const arena = Array.from({length: 20}, () => Array(12).fill(0));
 const player = { pos: {x: 0, y: 0}, matrix: null, next: null, score: 0 };
 
-// --- LOGIQUE CLASSEMENT (CORRIGÉE) ---
+// --- INTERFACE ---
+window.setTheme = (name) => { document.body.className = 'theme-' + name; currentTheme = name; };
+window.toggleLeaderboard = () => {
+    const lb = document.getElementById('leaderboard-overlay');
+    lb.classList.toggle('hidden');
+    if (!lb.classList.contains('hidden')) displayLeaderboard();
+};
+window.resetGame = () => { location.reload(); }; // Simplifié pour mobile
+document.getElementById('backToHub').onclick = () => window.location.href = "https://joxiagame.github.io/Joxia-Games/";
+
+// --- FONCTIONS CLASSEMENT ---
 
 function saveScore(playerName, score) {
-    // On ne sauvegarde pas si c'est un invité ou si le score est nul
     if (!playerName || playerName === "Invité" || score <= 0) return;
 
     const scoresRef = database.ref('games/TETRIS/scores');
@@ -67,8 +71,6 @@ function saveScore(playerName, score) {
                 score: Number(score)
             }).then(() => console.log("Premier score enregistré !"));
         }
-    }).catch(err => {
-        console.error("Erreur de permission ou réseau :", err);
     });
 }
 
@@ -82,7 +84,14 @@ function displayLeaderboard() {
     });
 }
 
-// --- MOTEUR DE JEU ---
+// --- MOTEUR JEU (Fonctions Mouvements partagées) ---
+
+function moveLeft() { player.pos.x--; if (collide(arena, player)) player.pos.x++; }
+function moveRight() { player.pos.x++; if (collide(arena, player)) player.pos.x--; }
+function moveRotate() {
+    rotate(player.matrix);
+    while (collide(arena, player)) { player.pos.x += (player.pos.x < 6 ? 1 : -1); }
+}
 
 function createPiece(t) {
     const p = {
@@ -190,23 +199,20 @@ function update(time = 0) {
     requestAnimationFrame(update);
 }
 
-// --- CONTRÔLES ---
+// --- COMMANDES (CLAVIER) ---
 document.onkeydown = e => {
     if (isGameOver) return;
-    if (e.keyCode === 37) { player.pos.x--; if (collide(arena, player)) player.pos.x++; }
-    else if (e.keyCode === 39) { player.pos.x++; if (collide(arena, player)) player.pos.x--; }
+    if (e.keyCode === 37) moveLeft();
+    else if (e.keyCode === 39) moveRight();
     else if (e.keyCode === 40) playerDrop();
-    else if (e.keyCode === 38) {
-        rotate(player.matrix);
-        while (collide(arena, player)) { player.pos.x += (player.pos.x < 6 ? 1 : -1); }
-    }
+    else if (e.keyCode === 38) moveRotate();
 };
 
-// --- INTERFACE ---
-window.setTheme = (n) => { document.body.className = 'theme-'+n; currentTheme = n; };
-window.toggleLeaderboard = () => { document.getElementById('leaderboard-overlay').classList.toggle('hidden'); };
-window.resetGame = () => { location.reload(); };
-document.getElementById('backToHub').onclick = () => window.location.href = "https://joxiagame.github.io/Joxia-Games/";
+// --- COMMANDES (TACTILE) ---
+document.getElementById('btn-left').onclick = () => { if(!isGameOver) moveLeft(); };
+document.getElementById('btn-right').onclick = () => { if(!isGameOver) moveRight(); };
+document.getElementById('btn-down').onclick = () => { if(!isGameOver) playerDrop(); };
+document.getElementById('btn-up').onclick = () => { if(!isGameOver) moveRotate(); };
 
 // --- LANCEMENT ---
 playerReset();
