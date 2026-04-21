@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Tetris Phoenix - Phoenix Assembly</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
@@ -22,19 +22,33 @@
 
         <div class="game-container">
             <canvas id="tetris" width="240" height="400"></canvas>
+            
             <div class="side-panel">
-                <div class="label">SCORE</div>
-                <div id="score">0</div>
-                <br>
-                <div class="label">SUIVANT</div>
-                <canvas id="next" width="80" height="80"></canvas>
+                <div class="panel-section">
+                    <div class="label">SCORE</div>
+                    <div id="score">0</div>
+                </div>
+                
+                <div class="panel-section">
+                    <div class="label">SUIVANT</div>
+                    <canvas id="next" width="80" height="80"></canvas>
+                </div>
+                
+                <div class="mobile-controls">
+                    <button class="touch-btn" id="btn-up">↻</button>
+                    <div class="touch-row">
+                        <button class="touch-btn" id="btn-left">←</button>
+                        <button class="touch-btn" id="btn-down">↓</button>
+                        <button class="touch-btn" id="btn-right">→</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     <div id="leaderboard-overlay" class="overlay hidden">
         <div class="modal">
-            <h2>TOP 10 JOUEURS</h2>
+            <h2>TOP 10 PILOTES</h2>
             <div id="leaderboard">Chargement...</div>
             <button class="btn-gaming" onclick="toggleLeaderboard()">FERMER</button>
         </div>
