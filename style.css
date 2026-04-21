@@ -1,0 +1,89 @@
+:root {
+    --bg-color: #05050a;
+    --container-bg: #111;
+    --border-color: #16213e;
+    --accent-color: #e94560;
+    --neon-blue: #00f2ff;
+}
+
+.theme-neon { 
+    --border-color: var(--neon-blue); 
+    --accent-color: var(--neon-blue);
+    --glow: 0 0 15px var(--neon-blue);
+}
+
+.theme-forest { --border-color: #4e9a06; --accent-color: #8ae234; }
+
+body {
+    background: var(--bg-color);
+    color: white;
+    font-family: 'Segoe UI', sans-serif;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+.game-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    margin-top: 40px;
+}
+
+.btn-gaming {
+    background: #111;
+    color: white;
+    border: 2px solid var(--border-color);
+    padding: 10px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 0.75em;
+    text-transform: uppercase;
+    transition: 0.2s;
+}
+
+.btn-gaming:hover { box-shadow: var(--glow); background: #1a1a1a; }
+
+/* Positionnement Quitter */
+.hub-btn { 
+    position: fixed; 
+    top: 15px; 
+    right: 15px; 
+    z-index: 100;
+    border-color: var(--neon-blue);
+}
+
+.top-menu { display: flex; gap: 5px; justify-content: center; }
+.btn-gold { border-color: gold; color: gold; }
+
+/* Conteneur du jeu */
+.game-container {
+    display: flex; 
+    gap: 15px; 
+    background: var(--container-bg);
+    padding: 15px; 
+    border-radius: 10px; 
+    border: 3px solid var(--border-color);
+    box-shadow: var(--glow);
+}
+
+canvas { border: 2px solid #222; background: #000; }
+.side-panel { width: 80px; text-align: center; }
+.label { color: var(--accent-color); font-size: 0.7em; font-weight: bold; }
+#score { font-size: 1.8em; text-shadow: var(--glow); }
+
+/* Overlays */
+.overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.9); display: flex; align-items: center;
+    justify-content: center; z-index: 1000;
+}
+.modal {
+    background: #111; border: 3px solid var(--border-color);
+    padding: 25px; border-radius: 10px; text-align: center; width: 85%; max-width: 300px;
+}
+.hidden { display: none !important; }
+.score-row { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #222; color: #39ff14; }

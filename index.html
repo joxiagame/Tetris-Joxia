@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tetris Phoenix - Phoenix Assembly</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+</head>
+<body class="theme-classic">
+
+    <button id="backToHub" class="btn-gaming hub-btn">QUITTER <span id="player-display"></span></button>
+
+    <div class="game-wrapper">
+        <div class="top-menu">
+            <button class="btn-gaming" onclick="setTheme('classic')">Classique</button>
+            <button class="btn-gaming" onclick="setTheme('neon')">Néon</button>
+            <button class="btn-gaming" onclick="setTheme('forest')">Forêt</button>
+            <button class="btn-gaming btn-gold" onclick="toggleLeaderboard()">CLASSEMENT</button>
+        </div>
+
+        <div class="game-container">
+            <canvas id="tetris" width="240" height="400"></canvas>
+            <div class="side-panel">
+                <div class="label">SCORE</div>
+                <div id="score">0</div>
+                <br>
+                <div class="label">SUIVANT</div>
+                <canvas id="next" width="80" height="80"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div id="leaderboard-overlay" class="overlay hidden">
+        <div class="modal">
+            <h2>TOP 10 JOUEURS</h2>
+            <div id="leaderboard">Chargement...</div>
+            <button class="btn-gaming" onclick="toggleLeaderboard()">FERMER</button>
+        </div>
+    </div>
+    
+    <div id="game-over-screen" class="overlay hidden">
+        <div class="modal">
+            <h1>GAME OVER</h1>
+            <p>Score : <span id="final-score">0</span></p>
+            <button class="btn-gaming" onclick="resetGame()">REJOUER</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
