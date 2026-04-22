@@ -1,15 +1,7 @@
-// --- CONFIGURATION FIREBASE ---
-const firebaseConfig = {
-    databaseURL: "https://joxiahub-2928b-default-rtdb.europe-west1.firebasedatabase.app/"
-};
-
-// Initialisation forcée
-if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-}
+const firebaseConfig = { databaseURL: "https://joxiahub-2928b-default-rtdb.europe-west1.firebasedatabase.app/" };
+if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
 const database = firebase.database();
 
-// --- SETUP JEU ---
 const canvas = document.getElementById('tetris');
 const context = canvas.getContext('2d');
 const nextCanvas = document.getElementById('next');
@@ -25,72 +17,42 @@ const themes = {
     neon: ['none','#00f2ff','#00f2ff','#00f2ff','#00f2ff','#00f2ff','#00f2ff','#00f2ff'],
     forest: ['none','#2ecc71','#27ae60','#d35400','#f1c40f','#c0392b','#7f8c8d','#8e44ad']
 };
-let currentTheme = 'classic';
-let isGameOver = false;
-let dropCounter = 0;
-let dropInterval = 1000;
-let lastTime = 0;
-
+let currentTheme = 'classic', isGameOver = false, dropCounter = 0, dropInterval = 1000, lastTime = 0;
 const arena = Array.from({length: 20}, () => Array(12).fill(0));
 const player = { pos: {x: 0, y: 0}, matrix: null, next: null, score: 0 };
 
-// --- INTERFACE ---
-window.setTheme = (name) => { document.body.className = 'theme-' + name; currentTheme = name; };
-window.toggleLeaderboard = () => {
-    const lb = document.getElementById('leaderboard-overlay');
-    lb.classList.toggle('hidden');
-    if (!lb.classList.contains('hidden')) displayLeaderboard();
-};
-window.resetGame = () => { location.reload(); }; // Simplifié pour mobile
-document.getElementById('backToHub').onclick = () => window.location.href = "https://joxiagame.github.io/Joxia-Games/";
-
-// --- FONCTIONS CLASSEMENT ---
-
-function saveScore(playerName, score) {
-    if (!playerName || playerName === "Invité" || score <= 0) return;
-
-    const scoresRef = database.ref('games/TETRIS/scores');
-
-    // On cherche si le nom existe déjà
-    scoresRef.orderByChild('name').equalTo(playerName).once('value').then(snapshot => {
-        if (snapshot.exists()) {
-            const data = snapshot.val();
-            const key = Object.keys(data)[0];
-            const oldScore = data[key].score;
-
-            // Mise à jour uniquement si le nouveau score est meilleur
-            if (score > oldScore) {
-                database.ref(`games/TETRIS/scores/${key}`).update({
-                    score: Number(score)
-                }).then(() => console.log("Record mis à jour !"));
-            }
-        } else {
-            // Création si nouveau joueur
-            scoresRef.push({
-                name: playerName,
-                score: Number(score)
-            }).then(() => console.log("Premier score enregistré !"));
+function arenaSweep() {
+    let rowCount = 1;
+    outer: for (let y = arena.length - 1; y > 0; --y) {
+        for (let x = 0; x < arena[y].length; ++x) {
+            if (arena[y][x] === 0) continue outer;
         }
+        const row = arena.splice(y, 1)[0].fill(0);
+        arena.unshift(row);
+        ++y;
+        player.score += rowCount * 10;
+        rowCount *= 2;
+    }
+    document.getElementById('score').innerText = player.score;
+}
+
+function saveScore(name, score) {
+    if (!name || name === "Invité" || score <= 0) return;
+    const ref = database.ref('games/TETRIS/scores');
+    ref.orderByChild('name').equalTo(name).once('value', snap => {
+        if (snap.exists()) {
+            const key = Object.keys(snap.val())[0];
+            if (score > snap.val()[key].score) database.ref(`games/TETRIS/scores/${key}`).update({score});
+        } else { ref.push({name, score}); }
     });
 }
 
 function displayLeaderboard() {
     database.ref('games/TETRIS/scores').orderByChild('score').limitToLast(10).on('value', snap => {
-        let scores = [];
-        snap.forEach(s => { scores.push(s.val()); });
-        scores.sort((a,b) => b.score - a.score);
-        document.getElementById('leaderboard').innerHTML = scores.map((s, i) => `
-            <div class="score-row"><span>#${i+1} ${s.name}</span><span>${s.score} pts</span></div>`).join('');
+        let s = []; snap.forEach(child => s.push(child.val()));
+        s.sort((a,b) => b.score - a.score);
+        document.getElementById('leaderboard').innerHTML = s.map((x,i) => `<div class="score-row"><span>#${i+1} ${x.name}</span><span>${x.score}</span></div>`).join('');
     });
-}
-
-// --- MOTEUR JEU (Fonctions Mouvements partagées) ---
-
-function moveLeft() { player.pos.x--; if (collide(arena, player)) player.pos.x++; }
-function moveRight() { player.pos.x++; if (collide(arena, player)) player.pos.x--; }
-function moveRotate() {
-    rotate(player.matrix);
-    while (collide(arena, player)) { player.pos.x += (player.pos.x < 6 ? 1 : -1); }
 }
 
 function createPiece(t) {
@@ -103,31 +65,23 @@ function createPiece(t) {
     return p[t];
 }
 
-function drawMatrix(matrix, offset, ctx) {
-    const colors = themes[currentTheme];
-    matrix.forEach((row, y) => {
-        row.forEach((value, x) => {
-            if (value !== 0) {
-                if (currentTheme === 'neon') { ctx.shadowColor = colors[value]; ctx.shadowBlur = 12; }
-                else { ctx.shadowBlur = 0; }
-                ctx.fillStyle = colors[value];
-                ctx.fillRect(x + offset.x, y + offset.y, 1, 1);
-                ctx.strokeStyle = "rgba(0,0,0,0.5)";
-                ctx.lineWidth = 0.05;
-                ctx.strokeRect(x + offset.x, y + offset.y, 1, 1);
-            }
-        });
-    });
+function drawMatrix(m, o, ctx) {
+    const c = themes[currentTheme];
+    m.forEach((row, y) => row.forEach((v, x) => {
+        if (v !== 0) {
+            ctx.fillStyle = c[v];
+            ctx.fillRect(x + o.x, y + o.y, 1, 1);
+            ctx.strokeStyle = 'white'; ctx.lineWidth = 0.05; ctx.strokeRect(x + o.x, y + o.y, 1, 1);
+        }
+    }));
 }
 
 function draw() {
-    context.fillStyle = '#000';
-    context.fillRect(0, 0, canvas.width, canvas.height);
-    drawMatrix(arena, {x: 0, y: 0}, context);
+    context.fillStyle = '#000'; context.fillRect(0, 0, canvas.width, canvas.height);
+    drawMatrix(arena, {x:0, y:0}, context);
     drawMatrix(player.matrix, player.pos, context);
-    nextContext.fillStyle = '#000';
-    nextContext.fillRect(0, 0, 80, 80);
-    if(player.next) drawMatrix(player.next, {x: 1, y: 1}, nextContext);
+    nextContext.fillStyle = '#000'; nextContext.fillRect(0, 0, 80, 80);
+    if(player.next) drawMatrix(player.next, {x:1, y:1}, nextContext);
 }
 
 function collide(a, p) {
@@ -141,18 +95,7 @@ function collide(a, p) {
 }
 
 function merge(a, p) {
-    p.matrix.forEach((row, y) => {
-        row.forEach((v, x) => { if (v !== 0) a[y + p.pos.y][x + p.pos.x] = v; });
-    });
-}
-
-function arenaSweep() {
-    outer: for (let y = arena.length - 1; y > 0; --y) {
-        for (let x = 0; x < arena[y].length; ++x) { if (arena[y][x] === 0) continue outer; }
-        const row = arena.splice(y, 1)[0].fill(0);
-        arena.unshift(row);
-        ++y;
-    }
+    p.matrix.forEach((row, y) => row.forEach((v, x) => { if (v !== 0) a[y + p.pos.y][x + p.pos.x] = v; }));
 }
 
 function playerReset() {
@@ -161,7 +104,6 @@ function playerReset() {
     player.next = createPiece(pieces[Math.random() * 7 | 0]);
     player.pos.y = 0;
     player.pos.x = (arena[0].length / 2 | 0) - (player.matrix[0].length / 2 | 0);
-
     if (collide(arena, player)) {
         isGameOver = true;
         document.getElementById('final-score').innerText = player.score;
@@ -175,19 +117,17 @@ function playerDrop() {
     if (collide(arena, player)) {
         player.pos.y--;
         merge(arena, player);
-        player.score++;
-        document.getElementById('score').innerText = player.score;
         playerReset();
         arenaSweep();
     }
     dropCounter = 0;
 }
 
-function rotate(matrix) {
-    for (let y = 0; y < matrix.length; ++y) {
-        for (let x = 0; x < y; ++x) [matrix[x][y], matrix[y][x]] = [matrix[y][x], matrix[x][y]];
+function rotate(m) {
+    for (let y = 0; y < m.length; ++y) {
+        for (let x = 0; x < y; ++x) [m[x][y], m[y][x]] = [m[y][x], m[x][y]];
     }
-    matrix.forEach(row => row.reverse());
+    m.forEach(row => row.reverse());
 }
 
 function update(time = 0) {
@@ -195,26 +135,27 @@ function update(time = 0) {
     const dt = time - lastTime; lastTime = time;
     dropCounter += dt;
     if (dropCounter > dropInterval) playerDrop();
-    draw();
-    requestAnimationFrame(update);
+    draw(); requestAnimationFrame(update);
 }
 
-// --- COMMANDES (CLAVIER) ---
+function move(dir) { player.pos.x += dir; if (collide(arena, player)) player.pos.x -= dir; }
+function pRotate() { rotate(player.matrix); while(collide(arena, player)) { player.pos.x += (player.pos.x < 6 ? 1 : -1); } }
+
 document.onkeydown = e => {
-    if (isGameOver) return;
-    if (e.keyCode === 37) moveLeft();
-    else if (e.keyCode === 39) moveRight();
+    if (e.keyCode === 37) move(-1);
+    else if (e.keyCode === 39) move(1);
     else if (e.keyCode === 40) playerDrop();
-    else if (e.keyCode === 38) moveRotate();
+    else if (e.keyCode === 38) pRotate();
 };
 
-// --- COMMANDES (TACTILE) ---
-document.getElementById('btn-left').onclick = () => { if(!isGameOver) moveLeft(); };
-document.getElementById('btn-right').onclick = () => { if(!isGameOver) moveRight(); };
-document.getElementById('btn-down').onclick = () => { if(!isGameOver) playerDrop(); };
-document.getElementById('btn-up').onclick = () => { if(!isGameOver) moveRotate(); };
+document.getElementById('btn-left').onclick = () => move(-1);
+document.getElementById('btn-right').onclick = () => move(1);
+document.getElementById('btn-down').onclick = () => playerDrop();
+document.getElementById('btn-up').onclick = () => pRotate();
 
-// --- LANCEMENT ---
-playerReset();
-update();
-displayLeaderboard();
+window.setTheme = (n) => { document.body.className = 'theme-'+n; currentTheme = n; };
+window.toggleLeaderboard = () => document.getElementById('leaderboard-overlay').classList.toggle('hidden');
+window.resetGame = () => location.reload();
+document.getElementById('backToHub').onclick = () => window.location.href = "https://joxiagame.github.io/Joxia-Games/";
+
+playerReset(); update(); displayLeaderboard();
