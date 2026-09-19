@@ -121,3 +121,27 @@ canvas { border: 2px solid #222; background: #000; }
 }
 .hidden { display: none !important; }
 .score-row { display: flex; justify-content: space-between; width: 220px; padding: 10px; border-bottom: 1px solid #222; color: #00ff00; }
+
+/* ===== Responsive mobile ===== */
+@media (max-width: 560px) {
+    body { align-items: flex-start; }
+    .game-wrapper { gap: 10px; padding: 66px 6px 12px; width: 100%; box-sizing: border-box; }
+
+    .hub-btn { top: 8px; right: 8px; padding: 7px 10px; font-size: 0.75em; }
+
+    .top-menu { flex-wrap: wrap; justify-content: center; gap: 6px; }
+    .top-menu .btn-gaming { padding: 8px 10px; font-size: 0.72em; }
+
+    .game-container { gap: 8px; padding: 8px; border-width: 2px; width: 100%; box-sizing: border-box; justify-content: center; }
+
+    /* Le canvas garde son ratio 240x400 mais rétrécit pour tenir */
+    #tetris { width: min(230px, 58vw); height: auto; aspect-ratio: 240 / 400; }
+
+    .side-panel { width: auto; flex: 1; min-width: 88px; gap: 10px; }
+    #next { width: 72px; height: 72px; }
+    #score { font-size: 1.5em; }
+
+    .touch-btn { width: 46px; height: 46px; }
+    .rotate-btn { width: 64px; height: 46px; }
+    .touch-row { gap: 10px; }
+}
